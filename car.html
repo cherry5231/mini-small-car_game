@@ -1,0 +1,2778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon City Rush</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #05070b;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #game {
+      position: fixed;
+      inset: 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* =====================================================
+       HUD
+    ===================================================== */
+
+    #hud {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 10;
+      color: white;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #title {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-shadow:
+        0 0 8px rgba(0, 220, 255, 0.8),
+        0 0 22px rgba(0, 220, 255, 0.35);
+    }
+
+    #subtitle {
+      margin-top: 4px;
+      font-size: 11px;
+      color: #9ba8b8;
+      letter-spacing: 2px;
+    }
+
+    #stats {
+      margin-top: 15px;
+      display: flex;
+      gap: 9px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      min-width: 100px;
+      padding: 9px 12px;
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 10px;
+      background: rgba(5, 10, 18, .65);
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-label {
+      font-size: 9px;
+      color: #8997a8;
+      letter-spacing: 1.5px;
+    }
+
+    .stat-value {
+      margin-top: 2px;
+      font-size: 21px;
+      font-weight: 800;
+    }
+
+    .stat-value small {
+      font-size: 9px;
+      color: #8e9aaa;
+    }
+
+    #climate {
+      color: #ffd65a;
+    }
+
+    #highScore {
+      color: #ffd84d;
+    }
+
+    /* =====================================================
+       OVERLAYS
+    ===================================================== */
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      background:
+        radial-gradient(
+          circle at center,
+          rgba(0, 210, 255, .13),
+          rgba(0,0,0,.84) 58%
+        );
+    }
+
+    #gameOverScreen {
+      display: none;
+    }
+
+    .start-card {
+      width: min(460px, calc(100vw - 32px));
+      padding: 35px;
+      text-align: center;
+
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 22px;
+
+      background: rgba(7, 12, 20, .82);
+      backdrop-filter: blur(18px);
+
+      box-shadow:
+        0 25px 80px rgba(0,0,0,.55),
+        0 0 60px rgba(0,180,255,.08);
+    }
+
+    .start-card h1 {
+      font-size: 42px;
+      letter-spacing: 5px;
+      font-weight: 950;
+
+      background: linear-gradient(
+        90deg,
+        #00eaff,
+        #ffffff,
+        #ff3b5f
+      );
+
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    #gameOverScreen .start-card h1 {
+      background: linear-gradient(
+        90deg,
+        #ff304f,
+        #ffffff,
+        #ff8a3d
+      );
+
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .start-card p {
+      margin-top: 12px;
+      color: #9aa8b9;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .final-score {
+      margin-top: 18px;
+      font-size: 15px;
+      color: #7f8da0;
+    }
+
+    .final-score span {
+      display: block;
+      margin-top: 5px;
+      color: white;
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .best-score {
+      margin-top: 12px;
+      color: #ffd84d;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .race-button {
+      margin-top: 25px;
+
+      width: 100%;
+      padding: 15px;
+
+      border: 0;
+      border-radius: 12px;
+
+      color: white;
+      background: linear-gradient(
+        90deg,
+        #00b7ff,
+        #0077ff
+      );
+
+      font-weight: 900;
+      letter-spacing: 2px;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 0 25px rgba(0,180,255,.35);
+
+      transition: .2s;
+    }
+
+    .race-button:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 35px rgba(0,180,255,.55);
+    }
+
+    #controls {
+      margin-top: 18px;
+      color: #718094;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    #controls b {
+      color: #cbd5e1;
+    }
+
+    /* =====================================================
+       MOBILE
+    ===================================================== */
+
+    #mobileControls {
+      position: fixed;
+      bottom: 22px;
+      left: 0;
+      right: 0;
+
+      display: none;
+      justify-content: space-between;
+
+      padding: 0 20px;
+
+      z-index: 15;
+    }
+
+    .mobile-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .control-btn {
+      width: 65px;
+      height: 65px;
+
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.2);
+
+      background: rgba(10,15,25,.72);
+      backdrop-filter: blur(8px);
+
+      color: white;
+      font-size: 25px;
+
+      display: grid;
+      place-items: center;
+
+      user-select: none;
+      touch-action: none;
+    }
+
+    .control-btn:active {
+      background: rgba(0,160,255,.45);
+    }
+
+    @media(max-width:700px) {
+
+      #mobileControls {
+        display: flex;
+      }
+
+      #title {
+        font-size: 19px;
+      }
+
+      .stat {
+        min-width: 82px;
+      }
+
+      .stat-value {
+        font-size: 17px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+
+<!-- =====================================================
+     HUD
+===================================================== -->
+
+<div id="hud">
+
+  <div id="title">
+    NEON CITY RUSH
+  </div>
+
+  <div id="subtitle">
+    CITY STREET CIRCUIT
+  </div>
+
+  <div id="stats">
+
+    <div class="stat">
+      <div class="stat-label">SPEED</div>
+
+      <div class="stat-value">
+        <span id="speed">0</span>
+        <small>KM/H</small>
+      </div>
+    </div>
+
+
+    <div class="stat">
+      <div class="stat-label">SCORE</div>
+
+      <div class="stat-value" id="score">
+        0
+      </div>
+    </div>
+
+
+    <div class="stat">
+      <div class="stat-label">HIGH SCORE</div>
+
+      <div class="stat-value" id="highScore">
+        0
+      </div>
+    </div>
+
+
+    <div class="stat">
+      <div class="stat-label">POSITION</div>
+
+      <div class="stat-value">
+        <span id="position">1</span>
+        / 4
+      </div>
+    </div>
+
+
+    <div class="stat">
+      <div class="stat-label">CLIMATE</div>
+
+      <div
+        class="stat-value"
+        id="climate"
+      >
+        ☀ SUN
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     START SCREEN
+===================================================== -->
+
+<div
+  id="startScreen"
+  class="overlay"
+>
+
+  <div class="start-card">
+
+    <h1>NEON CITY</h1>
+
+    <p>
+      Push your car through the city,
+      dodge rival racers and build your
+      highest possible score.
+    </p>
+
+    <div class="best-score">
+      🏆 HIGH SCORE:
+      <span id="startHighScore">0</span>
+    </div>
+
+    <button
+      id="startButton"
+      class="race-button"
+    >
+      START RACE
+    </button>
+
+    <div id="controls">
+      <b>W / ↑</b> Accelerate<br>
+      <b>S / ↓</b> Brake<br>
+      <b>A / D</b> Steer<br>
+      <b>SPACE</b> Start / Boost
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     GAME OVER
+===================================================== -->
+
+<div
+  id="gameOverScreen"
+  class="overlay"
+>
+
+  <div class="start-card">
+
+    <h1>GAME OVER</h1>
+
+    <p>
+      You crashed into another vehicle.
+    </p>
+
+    <div class="final-score">
+
+      FINAL SCORE
+
+      <span id="finalScore">
+        0
+      </span>
+
+    </div>
+
+    <div class="best-score">
+      🏆 HIGH SCORE:
+      <span id="gameOverHighScore">
+        0
+      </span>
+    </div>
+
+    <button
+      id="restartButton"
+      class="race-button"
+    >
+      RESTART RACE
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================================
+     MOBILE CONTROLS
+===================================================== -->
+
+<div id="mobileControls">
+
+  <div class="mobile-group">
+
+    <div
+      class="control-btn"
+      id="leftBtn"
+    >
+      ←
+    </div>
+
+    <div
+      class="control-btn"
+      id="rightBtn"
+    >
+      →
+    </div>
+
+  </div>
+
+
+  <div class="mobile-group">
+
+    <div
+      class="control-btn"
+      id="boostBtn"
+    >
+      ⚡
+    </div>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+import * as THREE from
+  "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+
+
+/* =====================================================
+   BASIC SETUP
+===================================================== */
+
+const container =
+  document.getElementById("game");
+
+
+const scene =
+  new THREE.Scene();
+
+
+scene.background =
+  new THREE.Color(
+    0x72b9e8
+  );
+
+
+scene.fog =
+  new THREE.FogExp2(
+    0x72b9e8,
+    0.012
+  );
+
+
+/* =====================================================
+   CAMERA
+===================================================== */
+
+const camera =
+  new THREE.PerspectiveCamera(
+    63,
+    window.innerWidth /
+      window.innerHeight,
+    0.1,
+    1000
+  );
+
+
+camera.position.set(
+  0,
+  4.7,
+  17
+);
+
+
+/* =====================================================
+   RENDERER
+===================================================== */
+
+const renderer =
+  new THREE.WebGLRenderer({
+    antialias: true
+  });
+
+
+renderer.setSize(
+  window.innerWidth,
+  window.innerHeight
+);
+
+
+renderer.setPixelRatio(
+  Math.min(
+    window.devicePixelRatio,
+    2
+  )
+);
+
+
+/*
+  Shadows disabled to eliminate
+  the large black road artifact.
+*/
+
+renderer.shadowMap.enabled =
+  false;
+
+
+renderer.outputColorSpace =
+  THREE.SRGBColorSpace;
+
+
+renderer.toneMapping =
+  THREE.ACESFilmicToneMapping;
+
+
+renderer.toneMappingExposure =
+  1.15;
+
+
+container.appendChild(
+  renderer.domElement
+);
+
+
+/* =====================================================
+   LIGHTING
+===================================================== */
+
+const ambient =
+  new THREE.HemisphereLight(
+    0xd8edff,
+    0x31452e,
+    2.2
+  );
+
+scene.add(ambient);
+
+
+const sun =
+  new THREE.DirectionalLight(
+    0xfff0c2,
+    3.2
+  );
+
+
+sun.position.set(
+  -35,
+  60,
+  20
+);
+
+
+scene.add(sun);
+
+
+const fillLight =
+  new THREE.HemisphereLight(
+    0x9fd4ff,
+    0x40583b,
+    .9
+  );
+
+
+scene.add(fillLight);
+
+
+/* =====================================================
+   CLIMATE
+===================================================== */
+
+const SUN_CLIMATE = {
+
+  background: 0x72b9e8,
+
+  fog: 0x72b9e8,
+
+  ambientSky: 0xd8edff,
+
+  ambientGround: 0x31452e,
+
+  ambientIntensity: 2.2,
+
+  fillSky: 0x9fd4ff,
+
+  fillGround: 0x40583b,
+
+  fillIntensity: .9,
+
+  sunColor: 0xfff0c2,
+
+  sunIntensity: 3.2
+};
+
+
+const DARK_CLIMATE = {
+
+  background: 0x05070d,
+
+  fog: 0x070b13,
+
+  ambientSky: 0x9fc7ff,
+
+  ambientGround: 0x111318,
+
+  ambientIntensity: 1.25,
+
+  fillSky: 0x344b72,
+
+  fillGround: 0x080b10,
+
+  fillIntensity: .45,
+
+  sunColor: 0x8db8ff,
+
+  sunIntensity: 1.4
+};
+
+
+let currentClimate =
+  "sun";
+
+
+/* =====================================================
+   WORLD
+===================================================== */
+
+const roadWidth = 15;
+
+const roadLength = 900;
+
+
+/* =====================================================
+   GROUND
+===================================================== */
+
+const ground =
+  new THREE.Mesh(
+
+    new THREE.PlaneGeometry(
+      250,
+      roadLength
+    ),
+
+    new THREE.MeshStandardMaterial({
+      color: 0x101812,
+      roughness: 1
+    })
+
+  );
+
+
+ground.rotation.x =
+  -Math.PI / 2;
+
+
+ground.position.z =
+  -350;
+
+
+scene.add(ground);
+
+
+/* =====================================================
+   ROAD
+===================================================== */
+
+const road =
+  new THREE.Mesh(
+
+    new THREE.PlaneGeometry(
+      roadWidth,
+      roadLength
+    ),
+
+    new THREE.MeshStandardMaterial({
+      color: 0x15171b,
+      roughness: .92
+    })
+
+  );
+
+
+road.rotation.x =
+  -Math.PI / 2;
+
+
+road.position.y =
+  .015;
+
+
+road.position.z =
+  -350;
+
+
+scene.add(road);
+
+
+/* =====================================================
+   ROAD EDGES
+===================================================== */
+
+function createRoadEdge(x) {
+
+  const edge =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        .18,
+        .03,
+        roadLength
+      ),
+
+      new THREE.MeshStandardMaterial({
+        color: 0xffd83d,
+        emissive: 0x4b3300,
+        emissiveIntensity: .6
+      })
+
+    );
+
+
+  edge.position.set(
+    x,
+    .045,
+    -350
+  );
+
+
+  scene.add(edge);
+}
+
+
+createRoadEdge(
+  -roadWidth / 2
+);
+
+
+createRoadEdge(
+  roadWidth / 2
+);
+
+
+/* =====================================================
+   ROAD MARKINGS
+===================================================== */
+
+const markings = [];
+
+
+const markingMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0xe8edf2,
+    emissive: 0x333333
+  });
+
+
+for (
+  let z = -430;
+  z < 50;
+  z += 11
+) {
+
+  for (
+    let lane = -1;
+    lane <= 1;
+    lane++
+  ) {
+
+    const mark =
+      new THREE.Mesh(
+
+        new THREE.BoxGeometry(
+          .12,
+          .025,
+          5
+        ),
+
+        markingMaterial
+
+      );
+
+
+    mark.position.set(
+      lane * 5,
+      .06,
+      z
+    );
+
+
+    scene.add(mark);
+
+    markings.push(mark);
+  }
+}
+
+
+/* =====================================================
+   BUILDINGS
+   KEEPING BUILDING/WINDOW SYSTEM INTACT
+===================================================== */
+
+const buildings = [];
+
+
+function createBuilding(
+  x,
+  z,
+  width,
+  height,
+  depth
+) {
+
+  const body =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        width,
+        height,
+        depth
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:
+          new THREE.Color()
+            .setHSL(
+              Math.random() * .08 +
+              .58,
+              .18,
+              .12 +
+              Math.random() * .12
+            ),
+
+        roughness: .85
+
+      })
+
+    );
+
+
+  body.position.set(
+    x,
+    height / 2,
+    z
+  );
+
+
+  scene.add(body);
+
+  buildings.push(body);
+
+
+  /* WINDOWS */
+
+  const windowMaterial =
+    new THREE.MeshBasicMaterial({
+      color: 0xffd96a
+    });
+
+
+  for (
+    let y = 4;
+    y < height - 1;
+    y += 3.3
+  ) {
+
+    for (
+      let wx = -width / 2 + 1.5;
+      wx < width / 2 - 1;
+      wx += 3
+    ) {
+
+      if (
+        Math.random() < .25
+      ) {
+
+        continue;
+      }
+
+
+      const window =
+        new THREE.Mesh(
+
+          new THREE.PlaneGeometry(
+            1.15,
+            1.4
+          ),
+
+          windowMaterial
+
+        );
+
+
+      window.position.set(
+        x + wx,
+        y,
+        z - depth / 2 - .01
+      );
+
+
+      scene.add(window);
+    }
+  }
+}
+
+
+/* =====================================================
+   CITY GENERATION
+===================================================== */
+
+for (
+  let z = -430;
+  z < 50;
+  z += 20
+) {
+
+  const leftWidth =
+    6 + Math.random() * 7;
+
+
+  const rightWidth =
+    6 + Math.random() * 7;
+
+
+  const leftHeight =
+    12 + Math.random() * 35;
+
+
+  const rightHeight =
+    12 + Math.random() * 42;
+
+
+  createBuilding(
+
+    -roadWidth / 2 -
+      leftWidth / 2 -
+      3 -
+      Math.random() * 7,
+
+    z,
+
+    leftWidth,
+
+    leftHeight,
+
+    8 + Math.random() * 8
+
+  );
+
+
+  createBuilding(
+
+    roadWidth / 2 +
+      rightWidth / 2 +
+      3 +
+      Math.random() * 7,
+
+    z,
+
+    rightWidth,
+
+    rightHeight,
+
+    8 + Math.random() * 8
+
+  );
+}
+
+
+/* =====================================================
+   STREET LIGHTS
+===================================================== */
+
+const streetLights = [];
+
+
+function createStreetLight(
+  x,
+  z
+) {
+
+  const group =
+    new THREE.Group();
+
+
+  const pole =
+    new THREE.Mesh(
+
+      new THREE.CylinderGeometry(
+        .06,
+        .08,
+        6,
+        8
+      ),
+
+      new THREE.MeshStandardMaterial({
+        color: 0x343941,
+        metalness: .7,
+        roughness: .35
+      })
+
+    );
+
+
+  pole.position.y =
+    3;
+
+
+  group.add(pole);
+
+
+  const arm =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        2,
+        .06,
+        .06
+      ),
+
+      new THREE.MeshStandardMaterial({
+        color: 0x343941
+      })
+
+    );
+
+
+  arm.position.set(
+    x > 0 ? -.8 : .8,
+    5.7,
+    0
+  );
+
+
+  group.add(arm);
+
+
+  const lamp =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        .5,
+        .15,
+        .25
+      ),
+
+      new THREE.MeshBasicMaterial({
+        color: 0xffe7a1
+      })
+
+    );
+
+
+  lamp.position.set(
+    x > 0 ? -1 : 1,
+    5.65,
+    0
+  );
+
+
+  group.add(lamp);
+
+
+  const light =
+    new THREE.PointLight(
+      0xffdf9a,
+      1.2,
+      25
+    );
+
+
+  light.position.copy(
+    lamp.position
+  );
+
+
+  group.add(light);
+
+
+  group.userData.streetLight =
+    light;
+
+
+  group.position.set(
+    x,
+    0,
+    z
+  );
+
+
+  scene.add(group);
+
+  streetLights.push(group);
+}
+
+
+for (
+  let z = -420;
+  z < 50;
+  z += 25
+) {
+
+  createStreetLight(
+    -roadWidth / 2 - 1.5,
+    z
+  );
+
+
+  createStreetLight(
+    roadWidth / 2 + 1.5,
+    z
+  );
+}
+
+
+/* =====================================================
+   CLIMATE FUNCTION
+===================================================== */
+
+function setClimate(
+  climate
+) {
+
+  if (
+    climate === "sun"
+  ) {
+
+    currentClimate =
+      "sun";
+
+
+    scene.background.setHex(
+      SUN_CLIMATE.background
+    );
+
+
+    scene.fog.color.setHex(
+      SUN_CLIMATE.fog
+    );
+
+
+    ambient.color.setHex(
+      SUN_CLIMATE.ambientSky
+    );
+
+
+    ambient.groundColor.setHex(
+      SUN_CLIMATE.ambientGround
+    );
+
+
+    ambient.intensity =
+      SUN_CLIMATE.ambientIntensity;
+
+
+    fillLight.color.setHex(
+      SUN_CLIMATE.fillSky
+    );
+
+
+    fillLight.groundColor.setHex(
+      SUN_CLIMATE.fillGround
+    );
+
+
+    fillLight.intensity =
+      SUN_CLIMATE.fillIntensity;
+
+
+    sun.color.setHex(
+      SUN_CLIMATE.sunColor
+    );
+
+
+    sun.intensity =
+      SUN_CLIMATE.sunIntensity;
+
+
+    for (
+      const streetLight
+      of streetLights
+    ) {
+
+      streetLight
+        .userData
+        .streetLight
+        .intensity = .8;
+    }
+
+
+    document.getElementById(
+      "climate"
+    ).textContent =
+      "☀ SUN";
+
+
+    document.getElementById(
+      "climate"
+    ).style.color =
+      "#ffd65a";
+
+
+  } else {
+
+    currentClimate =
+      "dark";
+
+
+    scene.background.setHex(
+      DARK_CLIMATE.background
+    );
+
+
+    scene.fog.color.setHex(
+      DARK_CLIMATE.fog
+    );
+
+
+    ambient.color.setHex(
+      DARK_CLIMATE.ambientSky
+    );
+
+
+    ambient.groundColor.setHex(
+      DARK_CLIMATE.ambientGround
+    );
+
+
+    ambient.intensity =
+      DARK_CLIMATE.ambientIntensity;
+
+
+    fillLight.color.setHex(
+      DARK_CLIMATE.fillSky
+    );
+
+
+    fillLight.groundColor.setHex(
+      DARK_CLIMATE.fillGround
+    );
+
+
+    fillLight.intensity =
+      DARK_CLIMATE.fillIntensity;
+
+
+    sun.color.setHex(
+      DARK_CLIMATE.sunColor
+    );
+
+
+    sun.intensity =
+      DARK_CLIMATE.sunIntensity;
+
+
+    for (
+      const streetLight
+      of streetLights
+    ) {
+
+      streetLight
+        .userData
+        .streetLight
+        .intensity = 4;
+    }
+
+
+    document.getElementById(
+      "climate"
+    ).textContent =
+      "🌙 NIGHT";
+
+
+    document.getElementById(
+      "climate"
+    ).style.color =
+      "#8fbaff";
+  }
+}
+
+
+setClimate("sun");
+
+
+/* =====================================================
+   CAR CREATION
+===================================================== */
+
+function createCar(
+  bodyColor,
+  accentColor
+) {
+
+  const car =
+    new THREE.Group();
+
+
+  /* BODY */
+
+  const body =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        2.15,
+        .48,
+        4.3
+      ),
+
+      new THREE.MeshStandardMaterial({
+        color: bodyColor,
+        metalness: .7,
+        roughness: .24
+      })
+
+    );
+
+
+  body.position.y =
+    .65;
+
+
+  car.add(body);
+
+
+  /* LOWER BODY */
+
+  const lower =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        2.3,
+        .3,
+        3.7
+      ),
+
+      new THREE.MeshStandardMaterial({
+        color: 0x101216,
+        metalness: .55,
+        roughness: .3
+      })
+
+    );
+
+
+  lower.position.y =
+    .45;
+
+
+  car.add(lower);
+
+
+  /* CABIN */
+
+  const cabin =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        1.55,
+        .6,
+        2.0
+      ),
+
+      new THREE.MeshPhysicalMaterial({
+        color: 0x101820,
+        metalness: .2,
+        roughness: .1,
+        transmission: .05,
+        transparent: true,
+        opacity: .92
+      })
+
+    );
+
+
+  cabin.position.set(
+    0,
+    1.05,
+    -.15
+  );
+
+
+  cabin.rotation.x =
+    -.04;
+
+
+  car.add(cabin);
+
+
+  /* ROOF */
+
+  const roof =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        1.45,
+        .08,
+        1.75
+      ),
+
+      new THREE.MeshStandardMaterial({
+        color: accentColor,
+        metalness: .65,
+        roughness: .2
+      })
+
+    );
+
+
+  roof.position.set(
+    0,
+    1.38,
+    -.15
+  );
+
+
+  car.add(roof);
+
+
+  /* HEADLIGHTS */
+
+  const headlightMaterial =
+    new THREE.MeshBasicMaterial({
+      color: 0xdfffff
+    });
+
+
+  for (
+    const x of [-.7, .7]
+  ) {
+
+    const light =
+      new THREE.Mesh(
+
+        new THREE.BoxGeometry(
+          .42,
+          .18,
+          .08
+        ),
+
+        headlightMaterial
+
+      );
+
+
+    light.position.set(
+      x,
+      .72,
+      -2.18
+    );
+
+
+    car.add(light);
+  }
+
+
+  /* TAIL LIGHTS */
+
+  const tailMaterial =
+    new THREE.MeshBasicMaterial({
+      color: 0xff172f
+    });
+
+
+  for (
+    const x of [-.7, .7]
+  ) {
+
+    const light =
+      new THREE.Mesh(
+
+        new THREE.BoxGeometry(
+          .42,
+          .18,
+          .08
+        ),
+
+        tailMaterial
+
+      );
+
+
+    light.position.set(
+      x,
+      .72,
+      2.18
+    );
+
+
+    car.add(light);
+  }
+
+
+  /* WHEELS */
+
+  const wheels = [];
+
+
+  const wheelMaterial =
+    new THREE.MeshStandardMaterial({
+      color: 0x050505,
+      roughness: .8
+    });
+
+
+  for (
+    const x of [-1.08, 1.08]
+  ) {
+
+    for (
+      const z of [-1.4, 1.4]
+    ) {
+
+      const wheel =
+        new THREE.Mesh(
+
+          new THREE.CylinderGeometry(
+            .42,
+            .42,
+            .28,
+            16
+          ),
+
+          wheelMaterial
+
+        );
+
+
+      wheel.rotation.z =
+        Math.PI / 2;
+
+
+      wheel.position.set(
+        x,
+        .43,
+        z
+      );
+
+
+      car.add(wheel);
+
+      wheels.push(wheel);
+    }
+  }
+
+
+  car.userData.wheels =
+    wheels;
+
+
+  return car;
+}
+
+
+/* =====================================================
+   PLAYER
+===================================================== */
+
+const player =
+  createCar(
+    0xd7193f,
+    0x8c1025
+  );
+
+
+player.position.set(
+  0,
+  0,
+  10
+);
+
+
+scene.add(player);
+
+
+/* =====================================================
+   RIVALS
+===================================================== */
+
+const rivalColors = [
+
+  [0x1264ff, 0x092b78],
+
+  [0xffc400, 0x806100],
+
+  [0x16c96b, 0x08763e]
+
+];
+
+
+const rivals = [];
+
+
+for (
+  let i = 0;
+  i < 3;
+  i++
+) {
+
+  const rival =
+    createCar(
+      rivalColors[i][0],
+      rivalColors[i][1]
+    );
+
+
+  rival.position.set(
+    [-5, 0, 5][i],
+    0,
+    -35 - i * 65
+  );
+
+
+  rival.userData.speed =
+    .85 +
+    Math.random() * .25;
+
+
+  scene.add(rival);
+
+  rivals.push(rival);
+}
+
+
+/* =====================================================
+   GAME STATE
+===================================================== */
+
+let running =
+  false;
+
+
+let gameOver =
+  false;
+
+
+let speed =
+  0;
+
+
+let targetSpeed =
+  0;
+
+
+let playerX =
+  0;
+
+
+let score =
+  0;
+
+
+let shake =
+  0;
+
+
+/* =====================================================
+   HIGH SCORE
+===================================================== */
+
+let highScore =
+  Number(
+    localStorage.getItem(
+      "neonCityRushHighScore"
+    )
+  ) || 0;
+
+
+function updateHighScoreUI() {
+
+  document.getElementById(
+    "highScore"
+  ).textContent =
+    Math.floor(highScore);
+
+
+  document.getElementById(
+    "startHighScore"
+  ).textContent =
+    Math.floor(highScore);
+
+
+  document.getElementById(
+    "gameOverHighScore"
+  ).textContent =
+    Math.floor(highScore);
+}
+
+
+updateHighScoreUI();
+
+
+function saveHighScore() {
+
+  const currentScore =
+    Math.floor(score);
+
+
+  if (
+    currentScore >
+    highScore
+  ) {
+
+    highScore =
+      currentScore;
+
+
+    localStorage.setItem(
+      "neonCityRushHighScore",
+      String(highScore)
+    );
+  }
+
+
+  updateHighScoreUI();
+}
+
+
+/* =====================================================
+   INPUT
+===================================================== */
+
+const keys = {};
+
+
+window.addEventListener(
+  "keydown",
+  e => {
+
+    keys[e.code] =
+      true;
+
+
+    if (
+      e.code === "Space"
+    ) {
+
+      if (
+        !running &&
+        !gameOver
+      ) {
+
+        startRace();
+      }
+
+
+      if (
+        !gameOver
+      ) {
+
+        targetSpeed =
+          Math.max(
+            targetSpeed,
+            2
+          );
+      }
+    }
+  }
+);
+
+
+window.addEventListener(
+  "keyup",
+  e => {
+
+    keys[e.code] =
+      false;
+  }
+);
+
+
+/* =====================================================
+   RESET
+===================================================== */
+
+function resetGame() {
+
+  score =
+    0;
+
+
+  speed =
+    0;
+
+
+  targetSpeed =
+    0;
+
+
+  playerX =
+    0;
+
+
+  player.position.set(
+    0,
+    0,
+    10
+  );
+
+
+  player.rotation.set(
+    0,
+    0,
+    0
+  );
+
+
+  rivals[0].position.set(
+    -5,
+    0,
+    -35
+  );
+
+
+  rivals[1].position.set(
+    0,
+    0,
+    -100
+  );
+
+
+  rivals[2].position.set(
+    5,
+    0,
+    -165
+  );
+
+
+  for (
+    const rival
+    of rivals
+  ) {
+
+    rival.userData.speed =
+      .85 +
+      Math.random() * .25;
+  }
+
+
+  /* RESET ROAD */
+
+  let index =
+    0;
+
+
+  for (
+    let z = -430;
+    z < 50;
+    z += 11
+  ) {
+
+    for (
+      let lane = -1;
+      lane <= 1;
+      lane++
+    ) {
+
+      if (
+        markings[index]
+      ) {
+
+        markings[index]
+          .position.z =
+          z;
+      }
+
+
+      index++;
+    }
+  }
+
+
+  /* START WITH SUN */
+
+  setClimate("sun");
+
+
+  document.getElementById(
+    "score"
+  ).textContent =
+    "0";
+
+
+  document.getElementById(
+    "speed"
+  ).textContent =
+    "0";
+
+
+  document.getElementById(
+    "position"
+  ).textContent =
+    "1";
+
+
+  updateHighScoreUI();
+}
+
+
+/* =====================================================
+   START
+===================================================== */
+
+function startRace() {
+
+  resetGame();
+
+
+  gameOver =
+    false;
+
+
+  running =
+    true;
+
+
+  document.getElementById(
+    "startScreen"
+  ).style.display =
+    "none";
+
+
+  document.getElementById(
+    "gameOverScreen"
+  ).style.display =
+    "none";
+
+
+  targetSpeed =
+    1.6;
+}
+
+
+/* =====================================================
+   GAME OVER
+===================================================== */
+
+function endGame() {
+
+  if (
+    gameOver
+  ) {
+
+    return;
+  }
+
+
+  gameOver =
+    true;
+
+
+  running =
+    false;
+
+
+  speed =
+    0;
+
+
+  targetSpeed =
+    0;
+
+
+  saveHighScore();
+
+
+  document.getElementById(
+    "finalScore"
+  ).textContent =
+    Math.floor(score);
+
+
+  document.getElementById(
+    "gameOverHighScore"
+  ).textContent =
+    Math.floor(highScore);
+
+
+  document.getElementById(
+    "gameOverScreen"
+  ).style.display =
+    "flex";
+}
+
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+document
+  .getElementById("startButton")
+  .addEventListener(
+    "click",
+    startRace
+  );
+
+
+document
+  .getElementById("restartButton")
+  .addEventListener(
+    "click",
+    startRace
+  );
+
+
+/* =====================================================
+   MOBILE BUTTONS
+===================================================== */
+
+function holdButton(
+  id,
+  key
+) {
+
+  const el =
+    document.getElementById(id);
+
+
+  const down =
+    e => {
+
+      e.preventDefault();
+
+
+      keys[key] =
+        true;
+
+
+      if (
+        !running &&
+        !gameOver
+      ) {
+
+        startRace();
+      }
+    };
+
+
+  const up =
+    e => {
+
+      e.preventDefault();
+
+
+      keys[key] =
+        false;
+    };
+
+
+  el.addEventListener(
+    "pointerdown",
+    down
+  );
+
+
+  el.addEventListener(
+    "pointerup",
+    up
+  );
+
+
+  el.addEventListener(
+    "pointercancel",
+    up
+  );
+
+
+  el.addEventListener(
+    "pointerleave",
+    up
+  );
+}
+
+
+holdButton(
+  "leftBtn",
+  "ArrowLeft"
+);
+
+
+holdButton(
+  "rightBtn",
+  "ArrowRight"
+);
+
+
+holdButton(
+  "boostBtn",
+  "Space"
+);
+
+
+/* =====================================================
+   CLOCK
+===================================================== */
+
+const clock =
+  new THREE.Clock();
+
+
+/* =====================================================
+   GAME UPDATE
+===================================================== */
+
+function update(dt) {
+
+  if (
+    !running ||
+    gameOver
+  ) {
+
+    return;
+  }
+
+
+  /* ===================================================
+     ACCELERATION
+  =================================================== */
+
+  if (
+    keys["KeyW"] ||
+    keys["ArrowUp"] ||
+    keys["Space"]
+  ) {
+
+    targetSpeed =
+      Math.min(
+        targetSpeed +
+          dt * 1.4,
+        3.7
+      );
+
+  } else {
+
+    targetSpeed =
+      Math.max(
+        targetSpeed -
+          dt * .8,
+        .8
+      );
+  }
+
+
+  /* ===================================================
+     BRAKE
+  =================================================== */
+
+  if (
+    keys["KeyS"] ||
+    keys["ArrowDown"]
+  ) {
+
+    targetSpeed =
+      Math.max(
+        targetSpeed -
+          dt * 3,
+        0
+      );
+  }
+
+
+  /* ===================================================
+     SPEED SMOOTHING
+  =================================================== */
+
+  speed +=
+    (
+      targetSpeed -
+      speed
+    ) *
+    dt *
+    4;
+
+
+  /* ===================================================
+     STEERING
+  =================================================== */
+
+  let steering =
+    0;
+
+
+  if (
+    keys["KeyA"] ||
+    keys["ArrowLeft"]
+  ) {
+
+    steering -= 1;
+  }
+
+
+  if (
+    keys["KeyD"] ||
+    keys["ArrowRight"]
+  ) {
+
+    steering += 1;
+  }
+
+
+  playerX +=
+    steering *
+    dt *
+    8;
+
+
+  playerX =
+    THREE.MathUtils.clamp(
+      playerX,
+      -5.3,
+      5.3
+    );
+
+
+  player.position.x =
+    THREE.MathUtils.lerp(
+      player.position.x,
+      playerX,
+      .16
+    );
+
+
+  player.rotation.z =
+    THREE.MathUtils.lerp(
+      player.rotation.z,
+      -steering * .09,
+      .15
+    );
+
+
+  /* ===================================================
+     WORLD SPEED
+  =================================================== */
+
+  const worldSpeed =
+    speed * 17;
+
+
+  /* ===================================================
+     ROAD MARKINGS
+  =================================================== */
+
+  for (
+    const mark
+    of markings
+  ) {
+
+    mark.position.z +=
+      worldSpeed * dt;
+
+
+    if (
+      mark.position.z > 22
+    ) {
+
+      mark.position.z -=
+        470;
+    }
+  }
+
+
+  /* ===================================================
+     BUILDINGS
+  =================================================== */
+
+  for (
+    const building
+    of buildings
+  ) {
+
+    building.position.z +=
+      worldSpeed *
+      dt *
+      .72;
+
+
+    if (
+      building.position.z > 35
+    ) {
+
+      building.position.z -=
+        480;
+    }
+  }
+
+
+  /* ===================================================
+     STREET LIGHTS
+  =================================================== */
+
+  for (
+    const light
+    of streetLights
+  ) {
+
+    light.position.z +=
+      worldSpeed * dt;
+
+
+    if (
+      light.position.z > 30
+    ) {
+
+      light.position.z -=
+        470;
+    }
+  }
+
+
+  /* ===================================================
+     RIVALS
+  =================================================== */
+
+  for (
+    const rival
+    of rivals
+  ) {
+
+    rival.position.z +=
+      worldSpeed *
+      dt *
+      rival.userData.speed;
+
+
+    /* AI LANE MOVEMENT */
+
+    rival.position.x +=
+      Math.sin(
+        performance.now() *
+        .001 +
+        rival.position.z
+      ) *
+      dt *
+      .3;
+
+
+    rival.position.x =
+      THREE.MathUtils.clamp(
+        rival.position.x,
+        -5.2,
+        5.2
+      );
+
+
+    /* =================================================
+       COLLISION
+    ================================================= */
+
+    const dx =
+      Math.abs(
+        rival.position.x -
+        player.position.x
+      );
+
+
+    const dz =
+      Math.abs(
+        rival.position.z -
+        player.position.z
+      );
+
+
+    if (
+      dx < 1.75 &&
+      dz < 3.1
+    ) {
+
+      shake =
+        .5;
+
+
+      endGame();
+
+
+      return;
+    }
+
+
+    /* =================================================
+       RIVAL PASSED
+    ================================================= */
+
+    if (
+      rival.position.z > 28
+    ) {
+
+      rival.position.z =
+        -220 -
+        Math.random() * 100;
+
+
+      rival.position.x =
+        [-5, 0, 5][
+          Math.floor(
+            Math.random() * 3
+          )
+        ];
+
+
+      rival.userData.speed =
+        .85 +
+        Math.random() * .25;
+
+
+      score +=
+        250;
+    }
+  }
+
+
+  /* ===================================================
+     WHEELS
+  =================================================== */
+
+  for (
+    const wheel
+    of player.userData.wheels
+  ) {
+
+    wheel.rotation.x +=
+      worldSpeed *
+      dt *
+      .45;
+  }
+
+
+  for (
+    const rival
+    of rivals
+  ) {
+
+    for (
+      const wheel
+      of rival.userData.wheels
+    ) {
+
+      wheel.rotation.x +=
+        worldSpeed *
+        dt *
+        .35;
+    }
+  }
+
+
+  /* ===================================================
+     CAMERA
+  =================================================== */
+
+  const cameraTargetX =
+    player.position.x *
+    .35;
+
+
+  camera.position.x =
+    THREE.MathUtils.lerp(
+      camera.position.x,
+      cameraTargetX,
+      .07
+    );
+
+
+  camera.position.z =
+    17;
+
+
+  camera.position.y =
+    4.7;
+
+
+  shake =
+    Math.max(
+      0,
+      shake -
+        dt * 1.8
+    );
+
+
+  if (
+    speed > 3
+  ) {
+
+    shake +=
+      dt * .04;
+  }
+
+
+  camera.position.x +=
+    (
+      Math.random() -
+      .5
+    ) *
+    shake;
+
+
+  camera.position.y +=
+    (
+      Math.random() -
+      .5
+    ) *
+    shake;
+
+
+  camera.lookAt(
+    player.position.x * .2,
+    .7,
+    -20
+  );
+
+
+  /* ===================================================
+     SCORE
+  =================================================== */
+
+  score +=
+    speed *
+    dt *
+    2;
+
+
+  /* ===================================================
+     HIGH SCORE LIVE UPDATE
+  =================================================== */
+
+  if (
+    score > highScore
+  ) {
+
+    highScore =
+      Math.floor(score);
+
+
+    localStorage.setItem(
+      "neonCityRushHighScore",
+      String(highScore)
+    );
+
+
+    updateHighScoreUI();
+  }
+
+
+  /* ===================================================
+     CLIMATE
+
+     0-999       SUN
+     1000-1999   NIGHT
+     2000-2999   SUN
+     3000-3999   NIGHT
+  =================================================== */
+
+  const climateLevel =
+    Math.floor(
+      score / 1000
+    );
+
+
+  const wantedClimate =
+    climateLevel % 2 === 0
+      ? "sun"
+      : "dark";
+
+
+  if (
+    wantedClimate !==
+    currentClimate
+  ) {
+
+    setClimate(
+      wantedClimate
+    );
+  }
+
+
+  /* ===================================================
+     UI
+  =================================================== */
+
+  document.getElementById(
+    "speed"
+  ).textContent =
+    Math.round(
+      speed * 72
+    );
+
+
+  document.getElementById(
+    "score"
+  ).textContent =
+    Math.floor(
+      score
+    );
+
+
+  /* ===================================================
+     POSITION
+  =================================================== */
+
+  let position =
+    1;
+
+
+  for (
+    const rival
+    of rivals
+  ) {
+
+    if (
+      rival.position.z <
+      player.position.z
+    ) {
+
+      position++;
+    }
+  }
+
+
+  document.getElementById(
+    "position"
+  ).textContent =
+    position;
+}
+
+
+/* =====================================================
+   ANIMATION LOOP
+===================================================== */
+
+function animate() {
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  const dt =
+    Math.min(
+      clock.getDelta(),
+      .05
+    );
+
+
+  update(dt);
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+
+animate();
+
+
+/* =====================================================
+   RESIZE
+===================================================== */
+
+window.addEventListener(
+  "resize",
+  () => {
+
+    camera.aspect =
+      window.innerWidth /
+      window.innerHeight;
+
+
+    camera.updateProjectionMatrix();
+
+
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+  }
+);
+
+</script>
+
+</body>
+</html>
